@@ -1,7 +1,8 @@
 import os
 import hashlib
+import threading
 
-def main():
+def secure_erasing():
     erasing_directory = input("[ + ] Folder Path : ")
     os.chdir(erasing_directory)
     
@@ -48,6 +49,12 @@ def main():
         
     print("\n[ + ] Erasing process completed.")
     
+
+def main():
+    
+    thread1 = threading.Thread(target=secure_erasing)
+    thread1.start()
+    thread1.join()
 
 if __name__ == "__main__":
     main()
