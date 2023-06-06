@@ -3,18 +3,27 @@ import multiprocessing
 import secrets
 import shutil
 
+OVERWRITE_PASSES = 35  
+NOISE_SIZE = 1024  
+
 def secure_erase_file(file_path):
     file_size = os.path.getsize(file_path)
 
     with open(file_path, 'rb+') as file_handle:
-        for _ in range(3):  # Perform 3 overwrites
+        for _ in range(OVERWRITE_PASSES):
+            file_handle.seek(0)
             for _ in range(file_size):
-                file_handle.seek(0)
                 random_bytes = os.urandom(1)
                 file_handle.write(random_bytes)
+                file_handle.seek(0)
+
+    # Add random noise
+    with open(file_path, 'ab') as file_handle:
+        random_noise = os.urandom(NOISE_SIZE)
+        file_handle.write(random_noise)
 
     os.remove(file_path)
-    print("Erased file - >", file_path.lower())
+    print("Erased file ->", file_path.lower())
 
 def secure_erase_directory(directory):
     file_count = 0
