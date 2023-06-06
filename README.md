@@ -9,3 +9,4 @@ A simple windows eraser written in python which deletes everything inside a spec
 - user input validation
 - secure directory erasure
 - progress tracking
+- capable of erasing hard drives
