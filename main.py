@@ -40,7 +40,12 @@ def main():
         else:
             print("There is no file in this directory.")    
 
-    os.removedirs(subfolder_path)
+
+    for root, dirs, files in os.walk(erasing_directory):
+                    for directory in dirs:
+                        subfolder_path = os.path.join(root, directory)
+                        os.removedirs(subfolder_path)
+        
     print("\n[ + ] Erasing process completed.")
     
 
