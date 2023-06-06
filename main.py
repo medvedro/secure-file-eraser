@@ -2,30 +2,29 @@ import os
 import multiprocessing
 import secrets
 import shutil
+import ctypes
 
-OVERWRITE_PASSES = 35  
-NOISE_SIZE = 1024  
+OVERWRITE_PASSES = 35
+NOISE_SIZE = 1024
+CLUSTER_SIZE = 4096
 
 def secure_erase_file(file_path):
     file_size = os.path.getsize(file_path)
+    cluster_count = (file_size + CLUSTER_SIZE - 1) // CLUSTER_SIZE
 
     with open(file_path, 'rb+') as file_handle:
         for _ in range(OVERWRITE_PASSES):
             file_handle.seek(0)
-            for _ in range(file_size):
-                random_bytes = os.urandom(1)
-                if secrets.randbelow(10) < 8:  
+            for _ in range(cluster_count):
+                cluster_data = file_handle.read(CLUSTER_SIZE)
+                if len(cluster_data) < CLUSTER_SIZE:
+                    cluster_data += b'\x00' * (CLUSTER_SIZE - len(cluster_data))
+
+                random_bytes = os.urandom(CLUSTER_SIZE)
+                if secrets.randbelow(10) < 8:
                     file_handle.write(random_bytes)
-                else:  
-                    original_byte = file_handle.read(1)
-                    file_handle.write(original_byte)
-                file_handle.seek(0)
-                byte_pos = secrets.randbelow(file_size)
-                file_handle.seek(byte_pos)
-                byte = file_handle.read(1)
-                modified_byte = bytes([byte[0] ^ (1 << secrets.randbelow(8))])
-                file_handle.seek(byte_pos)
-                file_handle.write(modified_byte)
+                else:
+                    file_handle.write(cluster_data)
 
     with open(file_path, 'ab') as file_handle:
         random_noise = os.urandom(NOISE_SIZE)
@@ -33,7 +32,6 @@ def secure_erase_file(file_path):
 
     os.remove(file_path)
     print("Erased file ->", file_path.lower())
-
 def secure_erase_directory(directory):
     file_count = 0
     erased_file_count = 0
