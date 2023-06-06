@@ -1,5 +1,5 @@
 # File Eraser
-A simple windows eraser written in python which deletes everything inside a specified folder.
+An advanced windows eraser written in python.
 
 ### features :
 - multiprocessing
