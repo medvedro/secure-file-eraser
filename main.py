@@ -14,10 +14,19 @@ def secure_erase_file(file_path):
             file_handle.seek(0)
             for _ in range(file_size):
                 random_bytes = os.urandom(1)
-                file_handle.write(random_bytes)
+                if secrets.randbelow(10) < 8:  
+                    file_handle.write(random_bytes)
+                else:  
+                    original_byte = file_handle.read(1)
+                    file_handle.write(original_byte)
                 file_handle.seek(0)
+                byte_pos = secrets.randbelow(file_size)
+                file_handle.seek(byte_pos)
+                byte = file_handle.read(1)
+                modified_byte = bytes([byte[0] ^ (1 << secrets.randbelow(8))])
+                file_handle.seek(byte_pos)
+                file_handle.write(modified_byte)
 
-    # Add random noise
     with open(file_path, 'ab') as file_handle:
         random_noise = os.urandom(NOISE_SIZE)
         file_handle.write(random_noise)
