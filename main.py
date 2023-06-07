@@ -14,12 +14,9 @@ def encrypt_file(file_path, encryption_key):
     with open(file_path, 'rb') as file:
         data = file.read()
 
-    # Generate a new encryption key for each file
-    encryption_key = Fernet.generate_key()
     cipher_suite = Fernet(encryption_key)
     encrypted_data = cipher_suite.encrypt(data)
 
-    # Create a unique file name for the encrypted file
     file_name, file_extension = os.path.splitext(file_path)
     encrypted_file_path = file_name + '.encrypted' + file_extension
 
@@ -101,11 +98,6 @@ def main():
         else:
             print("Invalid path. Please enter a valid drive or directory path.")
             
-        encryption_key = input("\n[ + ] Encryption key : ")
-        
-        
-    
-
     process_count = multiprocessing.cpu_count() 
 
     print("\n[ - ] Starting the erasing process...")
