@@ -32,7 +32,9 @@ def generate_encryption_key():
     return key
 
 
-def encrypt_file(file_path, encryption_key):
+
+
+def encrypt_file(file_path):
     with open(file_path, 'rb') as file:
         data = file.read()
 
@@ -58,9 +60,8 @@ def secure_erase_file(file_path):
     
     file_size = os.path.getsize(file_path)
     cluster_count = (file_size + CLUSTER_SIZE - 1) // CLUSTER_SIZE
-
-    encryption_key = generate_encryption_key()
-    encrypted_file_path = encrypt_file(file_path, encryption_key)
+    
+    encrypted_file_path = encrypt_file(file_path)
     
     with open(encrypted_file_path, 'rb+') as file_handle:
         for _ in range(OVERWRITE_PASSES):
