@@ -36,27 +36,20 @@ def encrypt_file(file_path, encryption_key):
     with open(file_path, 'rb') as file:
         data = file.read()
 
-    # Generate a strong encryption key
     encryption_key = generate_encryption_key()
 
-    # Generate a random IV
     iv = os.urandom(16)
 
-    # Configure the cipher
     cipher = Cipher(algorithms.AES(encryption_key), modes.GCM(iv), backend=default_backend())
     encryptor = cipher.encryptor()
 
-    # Encrypt the data
     encrypted_data = encryptor.update(data) + encryptor.finalize()
 
-    # Generate the authentication tag
     tag = encryptor.tag
 
-    # Create a unique file name for the encrypted file
     file_name, file_extension = os.path.splitext(file_path)
     encrypted_file_path = file_name + '.encrypted' + file_extension
 
-    # Write the encrypted data and metadata to the encrypted file
     with open(encrypted_file_path, 'wb') as encrypted_file:
         encrypted_file.write(iv)
         encrypted_file.write(tag)
@@ -147,7 +140,6 @@ def main():
 
     print("\n[ + ] Erasing process completed.")
 
-    # Securely delete the drive or directory itself
     if os.path.isdir(erasing_path):
         shutil.rmtree(erasing_path)
         print("Removed directory - >", erasing_path.lower())
