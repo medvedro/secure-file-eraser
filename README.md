@@ -5,7 +5,7 @@ An advanced windows file eraser written in python.
 - multiprocessing
 - cluster level overwriting using 70 passes
 - secure file erasure
-- advanced file encryption using XChaCha20-Poly1305
+- advanced file encryption using AES CTR
 - secure disposal of file system metadata
 - enhanced randomization
 - user input validation
