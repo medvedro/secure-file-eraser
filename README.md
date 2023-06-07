@@ -6,6 +6,7 @@ An advanced windows eraser written in python.
 - using 35 passes to ensure absolute data erasing
 - cluster level overwriting
 - secure file erasure
+- file encryption using unique encryption keys for each file
 - secure disposal of file system metadata
 - enhanced randomization
 - user input validation
