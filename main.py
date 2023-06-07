@@ -3,16 +3,40 @@ import multiprocessing
 import secrets
 import shutil
 import ctypes
+from cryptography.fernet import Fernet
 
 OVERWRITE_PASSES = 35
 NOISE_SIZE = 1024
 CLUSTER_SIZE = 4096
 
+
+def encrypt_file(file_path, encryption_key):
+    with open(file_path, 'rb') as file:
+        data = file.read()
+
+    # Generate a new encryption key for each file
+    encryption_key = Fernet.generate_key()
+    cipher_suite = Fernet(encryption_key)
+    encrypted_data = cipher_suite.encrypt(data)
+
+    # Create a unique file name for the encrypted file
+    file_name, file_extension = os.path.splitext(file_path)
+    encrypted_file_path = file_name + '.encrypted' + file_extension
+
+    with open(encrypted_file_path, 'wb') as encrypted_file:
+        encrypted_file.write(encrypted_data)
+
+    return encrypted_file_path, encryption_key
+
 def secure_erase_file(file_path):
+    
     file_size = os.path.getsize(file_path)
     cluster_count = (file_size + CLUSTER_SIZE - 1) // CLUSTER_SIZE
 
-    with open(file_path, 'rb+') as file_handle:
+    encryption_key = Fernet.generate_key()
+    encrypted_file_path, encryption_key = encrypt_file(file_path, encryption_key)
+    
+    with open(encrypted_file_path, 'rb+') as file_handle:
         for _ in range(OVERWRITE_PASSES):
             file_handle.seek(0)
             for _ in range(cluster_count):
@@ -26,12 +50,13 @@ def secure_erase_file(file_path):
                 else:
                     file_handle.write(cluster_data)
 
-    with open(file_path, 'ab') as file_handle:
+    with open(encrypted_file_path, 'ab') as file_handle:
         random_noise = os.urandom(NOISE_SIZE)
         file_handle.write(random_noise)
 
-    os.remove(file_path)
-    print("Erased file ->", file_path.lower())
+    os.remove(encrypted_file_path)
+    print("Erased file ->", encrypted_file_path.lower())
+    
 def secure_erase_directory(directory):
     file_count = 0
     erased_file_count = 0
@@ -75,6 +100,11 @@ def main():
             break
         else:
             print("Invalid path. Please enter a valid drive or directory path.")
+            
+        encryption_key = input("\n[ + ] Encryption key : ")
+        
+        
+    
 
     process_count = multiprocessing.cpu_count() 
 
