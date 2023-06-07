@@ -3,15 +3,15 @@ import multiprocessing
 import secrets
 import shutil
 import ctypes
-from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.primitives.kdf.scrypt import Scrypt
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import padding
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
-OVERWRITE_PASSES = 35
+OVERWRITE_PASSES = 70
 NOISE_SIZE = 1024
 CLUSTER_SIZE = 4096
 
@@ -38,21 +38,18 @@ def encrypt_file(file_path, encryption_key):
 
     encryption_key = generate_encryption_key()
 
-    iv = os.urandom(16)
+    nonce = os.urandom(16)
 
-    cipher = Cipher(algorithms.AES(encryption_key), modes.GCM(iv), backend=default_backend())
+    cipher = Cipher(algorithms.AES(encryption_key), mode=modes.CTR(nonce), backend=default_backend())
     encryptor = cipher.encryptor()
 
     encrypted_data = encryptor.update(data) + encryptor.finalize()
-
-    tag = encryptor.tag
 
     file_name, file_extension = os.path.splitext(file_path)
     encrypted_file_path = file_name + '.encrypted' + file_extension
 
     with open(encrypted_file_path, 'wb') as encrypted_file:
-        encrypted_file.write(iv)
-        encrypted_file.write(tag)
+        encrypted_file.write(nonce)
         encrypted_file.write(encrypted_data)
 
     return encrypted_file_path
@@ -62,7 +59,7 @@ def secure_erase_file(file_path):
     file_size = os.path.getsize(file_path)
     cluster_count = (file_size + CLUSTER_SIZE - 1) // CLUSTER_SIZE
 
-    encryption_key = Fernet.generate_key()
+    encryption_key = generate_encryption_key()
     encrypted_file_path = encrypt_file(file_path, encryption_key)
     
     with open(encrypted_file_path, 'rb+') as file_handle:
