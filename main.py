@@ -4,26 +4,65 @@ import secrets
 import shutil
 import ctypes
 from cryptography.fernet import Fernet
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+from cryptography.hazmat.primitives.kdf.scrypt import Scrypt
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import padding
 
 OVERWRITE_PASSES = 35
 NOISE_SIZE = 1024
 CLUSTER_SIZE = 4096
+
+def generate_encryption_key():
+    backend = default_backend()
+    salt = os.urandom(16) 
+    password = secrets.token_urlsafe(32) 
+
+    kdf = PBKDF2HMAC(
+        algorithm=hashes.SHA256(),
+        length=32,
+        salt=salt,
+        iterations=100000,
+        backend=backend
+    )
+    key = kdf.derive(password.encode())
+
+    return key
 
 
 def encrypt_file(file_path, encryption_key):
     with open(file_path, 'rb') as file:
         data = file.read()
 
-    cipher_suite = Fernet(encryption_key)
-    encrypted_data = cipher_suite.encrypt(data)
+    # Generate a strong encryption key
+    encryption_key = generate_encryption_key()
 
+    # Generate a random IV
+    iv = os.urandom(16)
+
+    # Configure the cipher
+    cipher = Cipher(algorithms.AES(encryption_key), modes.GCM(iv), backend=default_backend())
+    encryptor = cipher.encryptor()
+
+    # Encrypt the data
+    encrypted_data = encryptor.update(data) + encryptor.finalize()
+
+    # Generate the authentication tag
+    tag = encryptor.tag
+
+    # Create a unique file name for the encrypted file
     file_name, file_extension = os.path.splitext(file_path)
     encrypted_file_path = file_name + '.encrypted' + file_extension
 
+    # Write the encrypted data and metadata to the encrypted file
     with open(encrypted_file_path, 'wb') as encrypted_file:
+        encrypted_file.write(iv)
+        encrypted_file.write(tag)
         encrypted_file.write(encrypted_data)
 
-    return encrypted_file_path, encryption_key
+    return encrypted_file_path
 
 def secure_erase_file(file_path):
     
@@ -31,7 +70,7 @@ def secure_erase_file(file_path):
     cluster_count = (file_size + CLUSTER_SIZE - 1) // CLUSTER_SIZE
 
     encryption_key = Fernet.generate_key()
-    encrypted_file_path, encryption_key = encrypt_file(file_path, encryption_key)
+    encrypted_file_path = encrypt_file(file_path, encryption_key)
     
     with open(encrypted_file_path, 'rb+') as file_handle:
         for _ in range(OVERWRITE_PASSES):
@@ -99,7 +138,7 @@ def main():
             print("Invalid path. Please enter a valid drive or directory path.")
             
     process_count = multiprocessing.cpu_count() 
-
+    
     print("\n[ - ] Starting the erasing process...")
     pool = multiprocessing.Pool(processes=process_count)
     pool.map(secure_erase_drive, [erasing_path])
