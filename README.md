@@ -1,5 +1,5 @@
-# File Eraser
-An advanced windows eraser written in python.
+# Secure File Eraser
+An advanced windows file eraser written in python.
 
 ### features :
 - multiprocessing
