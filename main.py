@@ -125,16 +125,37 @@ def encrypt_file_with_3des(file_path, encryption_key):
 
     return encrypted_file_path
 
+def encrypt_file_with_chacha20(file_path, encryption_key):
+    nonce = os.urandom(16)
+    cipher = Cipher(algorithms.ChaCha20(encryption_key, nonce), mode=None, backend=default_backend())
+    encryptor = cipher.encryptor()
+
+    with open(file_path, 'rb') as file:
+        plaintext = file.read()
+
+    ciphertext = encryptor.update(plaintext) + encryptor.finalize()
+
+    encrypted_file_path = file_path + '.last_encryption'
+    with open(encrypted_file_path, 'wb') as encrypted_file:
+        encrypted_file.write(nonce)
+        encrypted_file.write(ciphertext)
+
+    return encrypted_file_path
+
 def secure_erase_file(file_path):
     
     encrypted_file_path = encrypt_file_with_aes(file_path)
     
-    overwrite(encrypted_file_path)
+    des_encryption_key = generate_short_encryption_key()
+    serpent_encryption_key = os.urandom(32)
     
-    encryption_key = generate_short_encryption_key()
-    secondly_file_path = encrypt_file_with_3des(encrypted_file_path, encryption_key)
+    secondly_file_path = encrypt_file_with_3des(encrypted_file_path, des_encryption_key)
     
     overwrite(secondly_file_path)
+    
+    last_file_path = encrypt_file_with_chacha20(secondly_file_path, serpent_encryption_key)
+    
+    overwrite(last_file_path)
 
     os.remove(secondly_file_path)
     print("Erased file ->", secondly_file_path.lower())
