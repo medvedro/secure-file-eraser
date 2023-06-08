@@ -3,7 +3,7 @@ An advanced windows file eraser written in python.
 
 ### features :
 - multiprocessing
-- cluster level overwriting using 70 passes
+- military level overwriting using DoD 5220.22-M method and cluster-level overwriting using 70 passes
 - secure file erasure
 - advanced file encryption using AES CTR
 - secure disposal of file system metadata
