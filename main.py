@@ -3,6 +3,7 @@ import multiprocessing
 import secrets
 import shutil
 import ctypes
+import random
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
@@ -31,7 +32,35 @@ def generate_encryption_key():
 
     return key
 
+def overwrite(file_location):
+    
+    file_size = os.path.getsize(file_location)
+    cluster_count = (file_size + CLUSTER_SIZE - 1) // CLUSTER_SIZE
+    
+    with open(file_location, 'rb+') as file:
+        for _ in range(3):
+            file.seek(0)
+            file.write(os.urandom(file_size))
+    
+    with open(file_location, 'rb+') as file_handle:
+        for _ in range(OVERWRITE_PASSES):
+            file_handle.seek(0)
+            for _ in range(cluster_count):
+                cluster_data = file_handle.read(CLUSTER_SIZE)
+                if len(cluster_data) < CLUSTER_SIZE:
+                    cluster_data += b'\x00' * (CLUSTER_SIZE - len(cluster_data))
 
+                random_bytes = os.urandom(CLUSTER_SIZE)
+                if secrets.randbelow(10) < 8:
+                    file_handle.write(random_bytes)
+                else:
+                    file_handle.write(cluster_data)
+
+    with open(file_location, 'ab') as file_handle:
+        random_noise = os.urandom(NOISE_SIZE)
+        file_handle.write(random_noise)
+        
+    
 
 
 def encrypt_file(file_path):
@@ -58,28 +87,9 @@ def encrypt_file(file_path):
 
 def secure_erase_file(file_path):
     
-    file_size = os.path.getsize(file_path)
-    cluster_count = (file_size + CLUSTER_SIZE - 1) // CLUSTER_SIZE
-    
     encrypted_file_path = encrypt_file(file_path)
     
-    with open(encrypted_file_path, 'rb+') as file_handle:
-        for _ in range(OVERWRITE_PASSES):
-            file_handle.seek(0)
-            for _ in range(cluster_count):
-                cluster_data = file_handle.read(CLUSTER_SIZE)
-                if len(cluster_data) < CLUSTER_SIZE:
-                    cluster_data += b'\x00' * (CLUSTER_SIZE - len(cluster_data))
-
-                random_bytes = os.urandom(CLUSTER_SIZE)
-                if secrets.randbelow(10) < 8:
-                    file_handle.write(random_bytes)
-                else:
-                    file_handle.write(cluster_data)
-
-    with open(encrypted_file_path, 'ab') as file_handle:
-        random_noise = os.urandom(NOISE_SIZE)
-        file_handle.write(random_noise)
+    overwrite(encrypted_file_path)
 
     os.remove(encrypted_file_path)
     print("Erased file ->", encrypted_file_path.lower())
