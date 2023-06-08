@@ -4,6 +4,8 @@ import secrets
 import shutil
 import ctypes
 import random
+import random
+import string
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
@@ -32,16 +34,25 @@ def generate_encryption_key():
 
     return key
 
+def generate_short_encryption_key():
+    key_length = 24  
+    encryption_key = os.urandom(key_length)
+    return encryption_key
+
 def overwrite(file_location):
     
     file_size = os.path.getsize(file_location)
     cluster_count = (file_size + CLUSTER_SIZE - 1) // CLUSTER_SIZE
+    shredding_key = generate_encryption_key()
     
+    # shredding algorithm 1
     with open(file_location, 'rb+') as file:
         for _ in range(3):
             file.seek(0)
             file.write(os.urandom(file_size))
     
+    
+    # shredding algorithm 2
     with open(file_location, 'rb+') as file_handle:
         for _ in range(OVERWRITE_PASSES):
             file_handle.seek(0)
@@ -55,6 +66,14 @@ def overwrite(file_location):
                     file_handle.write(random_bytes)
                 else:
                     file_handle.write(cluster_data)
+               
+    # shredding algorithm 3     
+    with open(file_location, 'rb+') as file_handle:
+        for _ in range(5):
+            file_handle.seek(0)
+            file_handle.write(shredding_key)
+            
+            
 
     with open(file_location, 'ab') as file_handle:
         random_noise = os.urandom(NOISE_SIZE)
@@ -62,8 +81,7 @@ def overwrite(file_location):
         
     
 
-
-def encrypt_file(file_path):
+def encrypt_file_with_aes(file_path):
     with open(file_path, 'rb') as file:
         data = file.read()
 
@@ -85,14 +103,41 @@ def encrypt_file(file_path):
 
     return encrypted_file_path
 
+def encrypt_file_with_3des(file_path, encryption_key):
+    
+    with open(file_path, 'rb') as file:
+        data = file.read()
+
+    if len(encryption_key) not in [16, 24]:
+        raise ValueError("Encryption key length should be 16 or 24 bytes.")
+
+    iv = os.urandom(8) 
+
+    cipher = Cipher(algorithms.TripleDES(encryption_key), modes.CBC(iv), backend=default_backend())
+
+    encryptor = cipher.encryptor()
+
+    encrypted_data = encryptor.update(data) + encryptor.finalize()
+
+    encrypted_file_path = file_path + '.secondly_encrypted'
+    with open(encrypted_file_path, 'wb') as encrypted_file:
+        encrypted_file.write(encrypted_data)
+
+    return encrypted_file_path
+
 def secure_erase_file(file_path):
     
-    encrypted_file_path = encrypt_file(file_path)
+    encrypted_file_path = encrypt_file_with_aes(file_path)
     
     overwrite(encrypted_file_path)
+    
+    encryption_key = generate_short_encryption_key()
+    secondly_file_path = encrypt_file_with_3des(encrypted_file_path, encryption_key)
+    
+    overwrite(secondly_file_path)
 
-    os.remove(encrypted_file_path)
-    print("Erased file ->", encrypted_file_path.lower())
+    os.remove(secondly_file_path)
+    print("Erased file ->", secondly_file_path.lower())
     
 def secure_erase_directory(directory):
     file_count = 0
