@@ -3,7 +3,7 @@ import multiprocessing
 import secrets
 import shutil
 import ctypes
-import random
+import ctypes.util
 import random
 import string
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
@@ -38,6 +38,11 @@ def generate_short_encryption_key():
     key_length = 24  
     encryption_key = os.urandom(key_length)
     return encryption_key
+
+def destroy_key(string):
+    string_length = len(string)
+    random_data = os.urandom(string_length)
+    string = random_data
 
 def overwrite(file_location):
     
@@ -156,9 +161,13 @@ def secure_erase_file(file_path):
     last_file_path = encrypt_file_with_chacha20(secondly_file_path, chacha_encryption_key)
     
     overwrite(last_file_path)
-
-    os.remove(secondly_file_path)
-    print("Erased file ->", secondly_file_path.lower())
+    
+    # destructing the encryption keys
+    destroy_key(des_encryption_key)
+    destroy_key(chacha_encryption_key)
+    
+    os.remove(last_file_path)
+    print("Erased file ->", last_file_path.lower())
     
 def secure_erase_directory(directory):
     file_count = 0
