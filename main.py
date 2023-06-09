@@ -150,6 +150,7 @@ def encrypt_file_with_chacha20(file_path, encryption_key):
 def secure_erase_file(file_path):
     
     encrypted_file_path = encrypt_file_with_aes(file_path)
+    overwrite(file_path)
     
     des_encryption_key = generate_short_encryption_key()
     chacha_encryption_key = os.urandom(32)
@@ -166,8 +167,17 @@ def secure_erase_file(file_path):
     destroy_key(des_encryption_key)
     destroy_key(chacha_encryption_key)
     
+    
+    overwrite(file_path)
+    overwrite(encrypted_file_path)
+    overwrite(secondly_file_path)
+    overwrite(last_file_path)
+    
     os.remove(last_file_path)
-    print("Erased file ->", last_file_path.lower())
+    os.remove(secondly_file_path)
+    os.remove(file_path)
+    
+    print("Erased file ->", file_path.lower())
     
 def secure_erase_directory(directory):
     file_count = 0
@@ -227,7 +237,7 @@ def main():
         shutil.rmtree(erasing_path)
         print("Removed directory - >", erasing_path.lower())
     else:
-        print("Secure erasure of drives is not supported in this script.")
+       print("Secure erasure of drives is not supported in this script.")
 
 if __name__ == "__main__":
     main()
