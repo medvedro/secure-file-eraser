@@ -12,5 +12,6 @@ An advanced windows file eraser written in python.
 - secure directory erasure
 - progress tracking
 - capable of erasing hard drives
+- secure key destruction
 
 
