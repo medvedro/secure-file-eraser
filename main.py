@@ -147,13 +147,13 @@ def secure_erase_file(file_path):
     encrypted_file_path = encrypt_file_with_aes(file_path)
     
     des_encryption_key = generate_short_encryption_key()
-    serpent_encryption_key = os.urandom(32)
+    chacha_encryption_key = os.urandom(32)
     
     secondly_file_path = encrypt_file_with_3des(encrypted_file_path, des_encryption_key)
     
     overwrite(secondly_file_path)
     
-    last_file_path = encrypt_file_with_chacha20(secondly_file_path, serpent_encryption_key)
+    last_file_path = encrypt_file_with_chacha20(secondly_file_path, chacha_encryption_key)
     
     overwrite(last_file_path)
 
